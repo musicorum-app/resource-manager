@@ -1,0 +1,6 @@
+# Musicorum Resource Manager Configuration
+
+sources:
+  - name: spotify
+    # Max requests per second
+    ratelimit: 3

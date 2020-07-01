@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/musicorum-app/resource-manager/api"
+	"github.com/musicorum-app/resource-manager/database"
 	"github.com/musicorum-app/resource-manager/queue"
+	"github.com/musicorum-app/resource-manager/redis"
 	"github.com/musicorum-app/resource-manager/routes"
 	"go/types"
 	"log"
@@ -15,6 +18,10 @@ import (
 func main() {
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
+
+	database.Initialize()
+	api.Initialize()
+	redis.InitializeRedis()
 
 	go func() {
 		server()
