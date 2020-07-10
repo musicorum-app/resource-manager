@@ -1,0 +1,22 @@
+POST http://localhost:8080/fetch/artists
+Content-Type: application/json
+
+{
+  "artists": [
+    "Kali uchis",
+    "Lady gaga",
+    "Lorde",
+    "!adasdasdasd",
+    "Rina sawayama",
+    "teputauquerpa???",
+    "kero kero bonito",
+    "brockhampton",
+    "radiohead",
+    "kaykatranda",
+    "michel telo",
+    "artic monekys",
+    "clairo"
+  ]
+}
+
+###
