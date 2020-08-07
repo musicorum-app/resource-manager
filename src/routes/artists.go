@@ -6,6 +6,7 @@ import (
 	"github.com/chebyrash/promise"
 	"github.com/musicorum-app/resource-manager/api"
 	"github.com/musicorum-app/resource-manager/database"
+	"github.com/musicorum-app/resource-manager/queue"
 	"github.com/musicorum-app/resource-manager/redis"
 	"github.com/musicorum-app/resource-manager/structs"
 	"github.com/musicorum-app/resource-manager/utils"
@@ -36,8 +37,13 @@ func ArtistsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleArtist(artist string) *promise.Promise {
-	return promise.New(func(resolve func(interface{}), reject func(error)) {
+	return promise.New(func(resolveFinal func(interface{}), reject func(error)) {
 		fmt.Println("Searching for " + artist)
+		redisSearch := redis.FindArtist(utils.Hash(artist))
+		if redisSearch != nil {
+			resolveFinal(redisSearch)
+			return
+		}
 		var result *structs.ArtistResponse
 		result = new(structs.ArtistResponse)
 		search := database.FindResource("artists", artist)
@@ -46,22 +52,40 @@ func handleArtist(artist string) *promise.Promise {
 			result.Hash = utils.Hash(artist)
 			result.Url = search.Url
 			result.Spotify = search.Spotify
+			fmt.Println(search.Key + "  /   " + string(search.CachedAt))
+			resolveFinal(result)
+			redis.SetArtist(result)
 		} else {
-			response := api.SearchArtist(artist)
-			if response == nil {
-				resolve(nil)
+			p := promise.New(func(resolve func(interface{}), reject func(error)) {
+				fmt.Errorf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+				response := api.SearchArtist(artist)
+				if response == nil {
+					resolve(nil)
+					resolveFinal(nil)
+					return
+				}
+				result.Name = response.Name
+				result.Hash = utils.Hash(artist)
+				result.Url = response.Image
+				result.Spotify = response.ID
+				go func() {
+					database.InsertArtist(response.Name, response.ID, response.Image)
+				}()
+				fmt.Println("RESULT THIG HERE")
+				resolve(response)
+				resolveFinal(result)
+				redis.SetArtist(result)
+			})
+			action := queue.AddItem("spotify", p)
+			response, err := action.Await()
+			if err != nil {
+				resolveFinal(nil)
+				return
 			}
-			result.Name = response.Name
-			result.Hash = utils.Hash(artist)
-			result.Url = response.Image
-			result.Spotify = response.ID
-			go func() {
-				database.InsertArtist(response.Name, response.ID, response.Image)
-			}()
+			if response == nil {
+				resolveFinal(nil)
+				return
+			}
 		}
-		redis.SetArtist(result)
-
-		//artists = append(artists, result.ImageResource)
-		resolve(result)
 	})
 }

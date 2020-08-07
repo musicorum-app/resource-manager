@@ -1,9 +1,11 @@
 package queue
 
 import (
+	"errors"
 	"fmt"
-	"github.com/musicorum-app/resource-manager/database"
+	"github.com/chebyrash/promise"
 	"github.com/musicorum-app/resource-manager/utils"
+	"math/rand"
 	"time"
 )
 
@@ -17,25 +19,25 @@ type ItemResult struct {
 	ImageResource ImageResource
 }
 
-type Item struct {
-	Resource string
-	Data     string
-	Callback func(result ItemResult)
+type Action struct {
+	Promise *promise.Promise
+	Resolve func(interface{})
+	Reject  func(error)
+	Key     string
 }
 
 var queueItems map[string]utils.Source
-var queueTickers map[string]int8
-var queueCallbacks map[string][]Item
+var queueActions map[string][]Action
+var completeActions map[string]bool
 
 func Initialize() {
 	sources := utils.GetConfig().Sources
 	queueItems = make(map[string]utils.Source)
-	queueTickers = make(map[string]int8)
-	queueCallbacks = make(map[string][]Item)
+	queueActions = make(map[string][]Action)
+	completeActions = make(map[string]bool)
 
 	for _, source := range sources {
 		queueItems[source.Name] = source
-		queueTickers[source.Name] = 0
 	}
 
 	for {
@@ -44,66 +46,76 @@ func Initialize() {
 	}
 }
 
-func AddItem(source string, resource string, data string, done chan ItemResult) {
-	println("NEW ITEM")
-	go func() {
-		callback := func(result ItemResult) {
-			println("CHANNEL")
-			done <- result
+func AddItem(source string, action *promise.Promise) *promise.Promise {
+	return promise.New(func(resolve func(interface{}), reject func(error)) {
+		fmt.Println("ADDING PROMISE ITEM")
+		item, found := queueItems[source]
+		if !found {
+			fmt.Println("Source " + source + " not found.")
+			reject(errors.New("Source " + source + " not found."))
 		}
-		queueCallbacks[source] = append(queueCallbacks[source], Item{
-			Resource: resource,
-			Data:     data,
-			Callback: callback,
+		key := utils.Hash(string(rand.Intn(120)))
+		queueActions[item.Name] = append(queueActions[item.Name], Action{
+			Promise: action,
+			Resolve: resolve,
+			Reject:  reject,
+			Key:     key,
 		})
-	}()
+		completeActions[key] = false
+		if len(queueActions[item.Name]) < int(item.RateLimit) {
+			tick()
+		}
+	})
 }
 
 func tick() {
+	fmt.Println("tick")
 	for _, source := range queueItems {
-		ticker := queueTickers[source.Name]
-		print("Source " + source.Name + "; Ticker: ")
-		print(ticker)
-		println()
-		println(len(queueCallbacks[source.Name]))
-		for _, callbackItem := range queueCallbacks[source.Name] {
-			fmt.Println(callbackItem.Data)
+		var promises []*promise.Promise
+		for n := 0; n < int(source.RateLimit); n++ {
+			if len(queueActions[source.Name]) > n {
+				action := queueActions[source.Name][n]
+
+				p := promise.New(func(resolve func(interface{}), reject func(error)) {
+					result, err := action.Promise.Await()
+					fmt.Println("RESOLVING ITEM")
+					if err != nil {
+						reject(err)
+						action.Reject(err)
+					} else {
+						resolve(result)
+						action.Resolve(result)
+					}
+				}).Then(func(data interface{}) interface{} {
+					completeActions[action.Key] = true
+					return nil
+				}).Catch(func(err error) error {
+					completeActions[action.Key] = true
+					fmt.Println("AN ERROR HERE TAKE")
+					return nil
+				})
+				promises = append(promises, p)
+			}
 		}
-		for _, callbackItem := range queueCallbacks[source.Name] {
-			fmt.Println("CURRENT CALLBACK " + callbackItem.Data)
-			queueCallback := queueCallbacks[source.Name]
-			callbackItem := callbackItem
-			go func() {
-				runItem(callbackItem)
-			}()
-			queueCallbacks[source.Name] = queueCallback[1:]
-			println("APPEND " + string(len(queueCallbacks[source.Name])))
-			println(len(queueCallback))
+
+		if len(promises) > 0 {
+			_, err := promise.All(promises...).Await()
+			if err != nil {
+				fmt.Println("Error on the promise list.")
+				fmt.Println(err)
+			}
 		}
-		queueTickers[source.Name] = ticker + 1
+		cleanActions(source)
 	}
 }
 
-func runItem(item Item) {
-	println("RUNNING ITEM")
-	//print(item.Resource)
-	//println()
-
-	switch item.Resource {
-	case "ARTIST":
-		runSpotifyArtist(item)
+func cleanActions(source utils.Source) {
+	actions := queueActions[source.Name]
+	var newActions []Action
+	for _, ac := range actions {
+		if !completeActions[ac.Key] {
+			newActions = append(newActions, ac)
+		}
 	}
-}
-
-func runSpotifyArtist(item Item) {
-	result := database.FindResource("artists", item.Data)
-	println(result.Spotify)
-	item.Callback(ItemResult{
-		ImageResource{
-			URL:      "alo",
-			Hash:     "asdasddasd",
-			FilePath: "asdasdkkk",
-		},
-	})
-	println("RUN FINISHED")
+	queueActions[source.Name] = newActions
 }

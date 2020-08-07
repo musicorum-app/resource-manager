@@ -12,6 +12,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/parnurzeal/gorequest v0.2.16 // indirect
 	github.com/rapito/go-spotify v0.0.0-20171031112644-2944f751da9c
+	github.com/rs/cors v1.7.0
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	go.mongodb.org/mongo-driver v1.3.4
 	gopkg.in/yaml.v2 v2.3.0

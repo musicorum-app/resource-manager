@@ -6,9 +6,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/musicorum-app/resource-manager/api"
 	"github.com/musicorum-app/resource-manager/database"
+	"github.com/musicorum-app/resource-manager/queue"
 	"github.com/musicorum-app/resource-manager/redis"
 	"github.com/musicorum-app/resource-manager/routes"
 	"github.com/musicorum-app/resource-manager/utils"
+	"github.com/rs/cors"
 	"go/types"
 	"log"
 	"net/http"
@@ -28,7 +30,7 @@ func main() {
 	}()
 
 	go func() {
-		// queue.Initialize()
+		queue.Initialize()
 	}()
 
 	wg.Wait()
@@ -39,9 +41,16 @@ func server() <-chan types.Nil {
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", index)
 	router.HandleFunc("/status", status)
-	router.HandleFunc("/fetch/artists", routes.ArtistsHandler).Methods("POST")
+	router.HandleFunc("/fetch/artists", routes.ArtistsHandler)
 
-	log.Fatal(http.ListenAndServe(":"+utils.GetEnvVar("PORT"), router))
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowCredentials: true,
+	})
+
+	handler := c.Handler(router)
+
+	log.Fatal(http.ListenAndServe(":"+utils.GetEnvVar("PORT"), handler))
 
 	return nil
 }
