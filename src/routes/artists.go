@@ -46,13 +46,12 @@ func handleArtist(artist string) *promise.Promise {
 		}
 		var result *structs.ArtistResponse
 		result = new(structs.ArtistResponse)
-		search := database.FindResource("artists", artist)
+		search := database.FindArtist("artists", artist)
 		if search != nil {
 			result.Name = search.Key
 			result.Hash = utils.Hash(artist)
 			result.Url = search.Url
 			result.Spotify = search.Spotify
-			fmt.Println(search.Key + "  /   " + string(search.CachedAt))
 			resolveFinal(result)
 			redis.SetArtist(result)
 		} else {

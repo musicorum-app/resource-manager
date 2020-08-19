@@ -10,6 +10,7 @@ require (
 	github.com/go-redis/redis/v8 v8.0.0-beta.5
 	github.com/gorilla/mux v1.7.4
 	github.com/joho/godotenv v1.3.0
+	github.com/mattn/go-nulltype v0.0.0-20200221160555-75ae8a76f2e9
 	github.com/parnurzeal/gorequest v0.2.16 // indirect
 	github.com/rapito/go-spotify v0.0.0-20171031112644-2944f751da9c
 	github.com/rs/cors v1.7.0

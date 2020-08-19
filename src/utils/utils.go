@@ -33,3 +33,7 @@ func Hash(key string) string {
 	bs := hash.Sum(nil)
 	return hex.EncodeToString(bs)
 }
+
+func HashAlbum(name string, artist string) string {
+	return Hash(name + "\u001F" + artist)
+}

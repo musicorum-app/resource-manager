@@ -69,7 +69,6 @@ func AddItem(source string, action *promise.Promise) *promise.Promise {
 }
 
 func tick() {
-	fmt.Println("tick")
 	for _, source := range queueItems {
 		var promises []*promise.Promise
 		for n := 0; n < int(source.RateLimit); n++ {

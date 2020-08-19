@@ -42,6 +42,7 @@ func server() <-chan types.Nil {
 	router.HandleFunc("/", index)
 	router.HandleFunc("/status", status)
 	router.HandleFunc("/fetch/artists", routes.ArtistsHandler)
+	router.HandleFunc("/fetch/albums", routes.AlbumsHandler)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
