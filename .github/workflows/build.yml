@@ -9,7 +9,7 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@master
-    - name: Restore Docker Layer Cache
+    - name: Docker Layer Cache
       uses: satackey/action-docker-layer-caching@v0.0.8
     - name: Build and publish to registry
       uses: docker/build-push-action@v1
