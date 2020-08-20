@@ -6,9 +6,11 @@ jobs:
   build:
     name: Docker
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     steps:
-    - uses: actions/checkout@master
+    - name: Checkout Code
+      uses: actions/checkout@master
+    - name: Restore Docker Layer Cache
+      uses: satackey/action-docker-layer-caching@v0.0.8
     - name: Build and publish to registry
       uses: docker/build-push-action@v1
       with:
