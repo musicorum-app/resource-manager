@@ -37,3 +37,7 @@ func Hash(key string) string {
 func HashAlbum(name string, artist string) string {
 	return Hash(name + "\u001F" + artist)
 }
+
+func HashTrack(name string, artist string, album string) string {
+	return Hash(name + "\u001F" + artist + "\u0010" + album)
+}

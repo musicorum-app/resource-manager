@@ -7,10 +7,12 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/musicorum-app/resource-manager/structs"
 	"github.com/musicorum-app/resource-manager/utils"
+	"time"
 )
 
 var ctx = context.Background()
 var rdb *redis.Client
+var duration time.Duration
 
 func InitializeRedis() {
 	rdb = redis.NewClient(&redis.Options{
@@ -18,6 +20,13 @@ func InitializeRedis() {
 		Password: utils.GetEnvVar("REDIS_PASS"),
 		DB:       0,
 	})
+
+	var err error
+	duration, err = time.ParseDuration(utils.GetEnvVar("REDIS_EXPIRY"))
+	if err != nil {
+		println("Duration not valid, using default.")
+		duration, _ = time.ParseDuration("100h")
+	}
 
 	pong, err := rdb.Ping(ctx).Result()
 	fmt.Println(pong, err)
@@ -37,7 +46,7 @@ func SetArtist(artist *structs.ArtistResponse) {
 		println(err.Error())
 	}
 
-	err = rdb.Set(ctx, artist.Hash, string(jsonData), 0).Err()
+	err = rdb.Set(ctx, artist.Hash, string(jsonData), duration).Err()
 	if err != nil {
 		println("REDIS ERROR")
 		println(err.Error())
@@ -72,7 +81,7 @@ func SetAlbum(album *structs.AlbumResponse) {
 		println(err.Error())
 	}
 
-	err = rdb.Set(ctx, album.Hash, string(jsonData), 0).Err()
+	err = rdb.Set(ctx, album.Hash, string(jsonData), duration).Err()
 	if err != nil {
 		println(err.Error())
 	}
@@ -91,4 +100,40 @@ func FindAlbum(hash string) *structs.AlbumResponse {
 		return nil
 	}
 	return data
+}
+
+func SetTrack(track *structs.TrackResponse) {
+	_, errG := rdb.Get(ctx, track.Hash).Result()
+	if errG != redis.Nil {
+		return
+	}
+
+	jsonData, err := json.Marshal(track)
+
+	if err != nil {
+		println(err.Error())
+	}
+
+	err = rdb.Set(ctx, track.Hash, string(jsonData), duration).Err()
+	if err != nil {
+		println(err.Error())
+	}
+}
+
+func FindTrack(hash string) *structs.TrackResponse {
+	result, err := rdb.Get(ctx, hash).Result()
+	if err != nil {
+		utils.FailOnError(err)
+		return nil
+	}
+
+	var data *structs.TrackResponse
+	err = json.Unmarshal([]byte(result), &data)
+	if err != nil {
+		fmt.Println("Error while parsing json from Redis")
+		utils.FailOnError(err)
+		return nil
+	}
+	return data
+
 }

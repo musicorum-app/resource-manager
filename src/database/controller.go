@@ -49,7 +49,7 @@ func InsertArtist(artist string, spotify string, url string) {
 		"spotify":  spotify,
 		"hash":     utils.Hash(artist),
 		"url":      url,
-		"cachedAt": time.Now().Second() * 1000,
+		"cachedAt": time.Now().Unix() * 1000,
 	})
 	if err != nil {
 		println("ERROR WHILE SAVING ON DATABASE")
@@ -58,6 +58,8 @@ func InsertArtist(artist string, spotify string, url string) {
 }
 
 func FindAlbum(album string, artist string) *structs.AlbumCache {
+	fmt.Println("Starting to search on database")
+
 	hash := utils.HashAlbum(album, artist)
 	collection := client.Database("resources").Collection("albums")
 	filter := bson.D{{"hash", hash}}
@@ -79,7 +81,7 @@ func InsertAlbum(cache *structs.AlbumResponse) {
 		"artist":   cache.Artist,
 		"spotify":  cache.Spotify,
 		"cover":    cache.Cover,
-		"cachedAt": time.Now().Second() * 1000,
+		"cachedAt": time.Now().Unix() * 1000,
 	})
 	if err != nil {
 		println("ERROR WHILE SAVING ON DATABASE")
