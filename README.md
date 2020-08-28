@@ -3,6 +3,7 @@
   <a href="https://www.jetbrains.com/?from=musicorum">
     <img src="https://img.shields.io/badge/Powered_by_GoLand-gray.svg?logo=jetbrains" />
   </a>
+  <img src="https://github.com/musicorum-app/resource-manager/workflows/Build/badge.svg" />
 </p>
 
 Resource manager used on the Musicorum Project to cross match data from [Last.fm](https://last.fm) to other services like Spotify or Deezer.
