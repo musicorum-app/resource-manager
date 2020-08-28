@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/joho/godotenv"
-	"log"
 	"os"
 	"strings"
 )
