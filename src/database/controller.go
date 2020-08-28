@@ -49,7 +49,7 @@ func InsertArtist(artist string, spotify string, url string) {
 		"spotify":  spotify,
 		"hash":     utils.Hash(artist),
 		"url":      url,
-		"cachedAt": time.Now().Second() * 1000,
+		"cachedAt": time.Now().Unix() * 1000,
 	})
 	if err != nil {
 		println("ERROR WHILE SAVING ON DATABASE")
@@ -58,6 +58,8 @@ func InsertArtist(artist string, spotify string, url string) {
 }
 
 func FindAlbum(album string, artist string) *structs.AlbumCache {
+	fmt.Println("Starting to search on database")
+
 	hash := utils.HashAlbum(album, artist)
 	collection := client.Database("resources").Collection("albums")
 	filter := bson.D{{"hash", hash}}
@@ -79,7 +81,40 @@ func InsertAlbum(cache *structs.AlbumResponse) {
 		"artist":   cache.Artist,
 		"spotify":  cache.Spotify,
 		"cover":    cache.Cover,
-		"cachedAt": time.Now().Second() * 1000,
+		"cachedAt": time.Now().Unix() * 1000,
+	})
+	if err != nil {
+		println("ERROR WHILE SAVING ON DATABASE")
+		println(err)
+	}
+}
+
+func FindTrack(hash string) *structs.TrackCache {
+	fmt.Println("Starting to search on database")
+
+	collection := client.Database("resources").Collection("tracks")
+	filter := bson.D{{"hash", hash}}
+	var result *structs.TrackCache
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
+	err := collection.FindOne(ctx, filter).Decode(&result)
+	if err != nil {
+		return nil
+	}
+	return result
+}
+
+func SetTrack(cache *structs.TrackResponse) {
+	collection := client.Database("resources").Collection("tracks")
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	_, err := collection.InsertOne(ctx, bson.M{
+		"hash":     utils.HashTrack(cache.Name, cache.Artist, cache.Album),
+		"name":     cache.Name,
+		"artist":   cache.Artist,
+		"album":    cache.Album,
+		"cover":    cache.Cover,
+		"spotify":  cache.Spotify,
+		"duration": cache.Duration,
+		"cachedAt": time.Now().Unix() * 1000,
 	})
 	if err != nil {
 		println("ERROR WHILE SAVING ON DATABASE")

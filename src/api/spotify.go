@@ -20,6 +20,15 @@ type AlbumObject struct {
 	Image  string
 }
 
+type TrackObject struct {
+	ID       string
+	Name     string
+	Image    string
+	Artist   string
+	Album    string
+	Duration int
+}
+
 type ImageItem struct {
 	Url string
 }
@@ -48,7 +57,7 @@ func SearchArtist(artist string) *ArtistObject {
 	type SpotifyResponse struct {
 		Artists ArtistsResponse
 	}
-	search, err := spot.Get("search?type=artist&q=%s", nil, artist)
+	search, err := spot.Get("search?type=artist&q=\"%s\"", nil, artist)
 	if len(err) > 0 {
 		utils.FailOnError(err[0])
 	}
@@ -87,7 +96,7 @@ func SearchAlbum(album string, artist string) *AlbumObject {
 	type SpotifyResponse struct {
 		Albums AlbumsResponse `json:"albums"`
 	}
-	search, err := spot.Get("search?type=album&q=%s artist:%s", nil, album, artist)
+	search, err := spot.Get("search?type=album&q=\"%s\" artist:\"%s\"", nil, album, artist)
 	if len(err) > 0 {
 		fmt.Print(err)
 		utils.FailOnError(err[0])
@@ -110,6 +119,61 @@ func SearchAlbum(album string, artist string) *AlbumObject {
 	result.Name = item.Name
 	result.Artist = item.Artists[0].Name
 	result.Image = item.Images[0].Url
+
+	return result
+}
+
+func SearchTrack(name string, album string, artist string) *TrackObject {
+	spot.Authorize()
+	type ArtistItem struct {
+		Name string
+	}
+	type AlbumItem struct {
+		Name   string      `json:"name"`
+		Images []ImageItem `json:"images"`
+	}
+	type TrackResponseItem struct {
+		ID       string       `json:"id"`
+		Artists  []ArtistItem `json:"artists"`
+		Album    AlbumItem    `json:"album"`
+		Name     string       `json:"name"`
+		Duration int          `json:"duration_ms"`
+	}
+	type TracksResponse struct {
+		Items []TrackResponseItem `json:"items"`
+	}
+	type SpotifyResponse struct {
+		Tracks TracksResponse `json:"tracks"`
+	}
+	albumSearch := ""
+	if album != "" {
+		albumSearch = fmt.Sprintf("album:\"%s\"", album)
+	}
+	search, err := spot.Get("search?type=track&q=\"%s\" artist:\"%s\" %s", nil, name, artist, albumSearch)
+	if len(err) > 0 {
+		fmt.Print(err)
+		utils.FailOnError(err[0])
+		return nil
+	}
+	var response SpotifyResponse
+	resErr := json.Unmarshal(search, &response)
+	if resErr != nil {
+		fmt.Println(resErr)
+		return nil
+	}
+
+	if len(response.Tracks.Items) == 0 {
+		return nil
+	}
+	result := new(TrackObject)
+
+	item := response.Tracks.Items[0]
+	result.ID = item.ID
+	result.Name = item.Name
+	result.Artist = item.Artists[0].Name
+	result.Image = item.Album.Images[0].Url
+	result.Album = item.Album.Name
+	result.Duration = item.Duration
 
 	return result
 }

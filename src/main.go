@@ -11,7 +11,6 @@ import (
 	"github.com/musicorum-app/resource-manager/routes"
 	"github.com/musicorum-app/resource-manager/utils"
 	"github.com/rs/cors"
-	"go/types"
 	"log"
 	"net/http"
 	"sync"
@@ -36,13 +35,13 @@ func main() {
 	wg.Wait()
 }
 
-func server() <-chan types.Nil {
+func server() {
 	log.Println("Starting web server...")
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", index)
-	router.HandleFunc("/status", status)
 	router.HandleFunc("/fetch/artists", routes.ArtistsHandler)
 	router.HandleFunc("/fetch/albums", routes.AlbumsHandler)
+	router.HandleFunc("/fetch/tracks", routes.TracksHandler)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -52,16 +51,10 @@ func server() <-chan types.Nil {
 	handler := c.Handler(router)
 
 	log.Fatal(http.ListenAndServe(":"+utils.GetEnvVar("PORT"), handler))
-
-	return nil
 }
 
 func index(w http.ResponseWriter, _ *http.Request) {
 	mapIndex := map[string]string{"working": "ok"}
 	marshal, _ := json.Marshal(mapIndex)
 	fmt.Fprintln(w, string(marshal))
-}
-
-func status(w http.ResponseWriter, _ *http.Request) {
-	fmt.Fprintln(w, "Todo Index!")
 }

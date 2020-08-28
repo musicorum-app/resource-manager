@@ -22,7 +22,8 @@ func GetEnvVar(key string) string {
 
 func FailOnError(err error) {
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println("An error ocorrured!")
+		fmt.Println(err)
 	}
 }
 
@@ -36,4 +37,8 @@ func Hash(key string) string {
 
 func HashAlbum(name string, artist string) string {
 	return Hash(name + "\u001F" + artist)
+}
+
+func HashTrack(name string, artist string, album string) string {
+	return Hash(name + "\u001F" + artist + "\u0010" + album)
 }
