@@ -22,7 +22,8 @@ func GetEnvVar(key string) string {
 
 func FailOnError(err error) {
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println("An error ocorrured!")
+		fmt.Println(err)
 	}
 }
 
