@@ -8,3 +8,4 @@
 *.dylib
 resource-manager
 server
+.idea
