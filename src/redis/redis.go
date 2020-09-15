@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"github.com/musicorum-app/resource-manager/api"
 	"github.com/musicorum-app/resource-manager/structs"
 	"github.com/musicorum-app/resource-manager/utils"
 	"time"
@@ -136,4 +137,23 @@ func FindTrack(hash string) *structs.TrackResponse {
 	}
 	return data
 
+}
+
+func SaveArtistRewindResponse(artist api.ArtistObject) {
+	key := fmt.Sprintf("spotify:" + artist.ID)
+	_, errG := rdb.Get(ctx, key).Result()
+	if errG != redis.Nil {
+		return
+	}
+
+	jsonData, err := json.Marshal(artist)
+
+	if err != nil {
+		println(err.Error())
+	}
+
+	err = rdb.Set(ctx, key, string(jsonData), duration).Err()
+	if err != nil {
+		println(err.Error())
+	}
 }

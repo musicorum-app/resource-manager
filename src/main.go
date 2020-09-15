@@ -43,6 +43,8 @@ func server() {
 	router.HandleFunc("/fetch/albums", routes.AlbumsHandler)
 	router.HandleFunc("/fetch/tracks", routes.TracksHandler)
 
+	router.HandleFunc("/rewind/artists", routes.RewindArtistsHandler)
+
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,

@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"github.com/musicorum-app/resource-manager/utils"
 	"github.com/rapito/go-spotify/spotify"
+	"strings"
 )
 
 type ArtistObject struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Image string `json:"image"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Image      string `json:"image"`
+	Popularity uint8  `json:"popularity"`
 }
 
 type AlbumObject struct {
@@ -47,9 +49,10 @@ func Initialize() {
 func SearchArtist(artist string) *ArtistObject {
 	spot.Authorize()
 	type ArtistResponseItem struct {
-		ID     string
-		Images []ImageItem
-		Name   string
+		ID         string
+		Images     []ImageItem
+		Name       string
+		Popularity uint8
 	}
 	type ArtistsResponse struct {
 		Items []ArtistResponseItem
@@ -75,6 +78,7 @@ func SearchArtist(artist string) *ArtistObject {
 	result.ID = response.Artists.Items[0].ID
 	result.Name = response.Artists.Items[0].Name
 	result.Image = response.Artists.Items[0].Images[0].Url
+	result.Popularity = response.Artists.Items[0].Popularity
 
 	return result
 }
@@ -174,6 +178,45 @@ func SearchTrack(name string, album string, artist string) *TrackObject {
 	result.Image = item.Album.Images[0].Url
 	result.Album = item.Album.Name
 	result.Duration = item.Duration
+
+	return result
+}
+
+func GetArtists(ids []string) []ArtistObject {
+	spot.Authorize()
+	type ArtistResponseItem struct {
+		ID         string
+		Images     []ImageItem
+		Name       string
+		Popularity uint8
+	}
+	type SpotifyResponse struct {
+		Artists []ArtistResponseItem
+	}
+	search, err := spot.Get("artists?ids=%s", nil, strings.Join(ids, ","))
+	if len(err) > 0 {
+		utils.FailOnError(err[0])
+	}
+	var response SpotifyResponse
+	resErr := json.Unmarshal(search, &response)
+	if resErr != nil {
+		println(resErr)
+	}
+
+	if len(response.Artists) == 0 {
+		return nil
+	}
+	var result []ArtistObject
+
+	for _, a := range response.Artists {
+		artist := ArtistObject{
+			ID:         a.ID,
+			Name:       a.Name,
+			Image:      a.Images[0].Url,
+			Popularity: a.Popularity,
+		}
+		result = append(result, artist)
+	}
 
 	return result
 }

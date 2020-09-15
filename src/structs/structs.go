@@ -3,10 +3,18 @@ package structs
 import "github.com/mattn/go-nulltype"
 
 type ArtistResponse struct {
-	Hash    string `json:"hash"`
-	Name    string `json:"name"`
-	Url     string `json:"url"`
-	Spotify string `json:"spotify"`
+	Hash       string `json:"hash"`
+	Name       string `json:"name"`
+	Url        string `json:"url"`
+	Spotify    string `json:"spotify"`
+	Popularity *uint8 `json:"popularity"`
+}
+
+type ArtistRewindResponse struct {
+	Name       string `json:"name"`
+	Spotify    string `json:"spotify"`
+	Image      string `json:"image"`
+	Popularity uint8  `json:"popularity"`
 }
 
 type ArtistCache struct {
